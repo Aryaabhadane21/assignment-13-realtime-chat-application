@@ -130,23 +130,4 @@ Follow these steps to test all real-time capabilities:
 
 ---
 
-## 🌐 Deploying to Render
-
-### A. Repository Setup
-1. Ensure all files are committed to your GitHub repository (`itm-assignment-13-chat-socket`).
-2. Verify `server.js` listens to `process.env.PORT || 5000`.
-
-### B. Create Web Service on Render
-1. Go to [render.com](https://render.com) and click **New +** → **Web Service**.
-2. Connect your GitHub repository.
-3. If the project is in a subdirectory, set **Root Directory** to `Aryaa_Bhadane`.
-4. Configure build and start commands:
-   - **Environment:** `Node`
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm start`
-   - **Instance Type:** `Free`
-5. Click **Create Web Service**.
-
-### C. WebSocket Notes for Render
-- Render provides native WebSocket support over HTTPS/WSS automatically.
-- *Note on Render Free Tier:* Free instances spin down during periods of inactivity. The first request after sleep may take ~30–50 seconds for cold start. Since this architecture uses in-memory storage, active state and room histories reset if the instance spins down.
+DEPLOYMENT LINK: https://realtime-chat-application-tihs.onrender.com/
