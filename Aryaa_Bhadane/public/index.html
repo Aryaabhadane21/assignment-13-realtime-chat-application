@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real-Time Chat Engine | Socket.io</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ================= LOGIN / ONBOARDING MODAL ================= -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="logo-icon">⚡</div>
+        <h2>Welcome to PulseChat</h2>
+        <p>Real-Time Group Chat & Direct Messaging Engine</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="usernameInput">Choose your display name</label>
+          <input 
+            type="text" 
+            id="usernameInput" 
+            placeholder="e.g. Aarav, Priya, Rohan..." 
+            autocomplete="off" 
+            maxlength="25" 
+            required 
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Select an avatar</label>
+          <div class="avatar-selector" id="avatarSelector">
+            <button type="button" class="avatar-option selected" data-avatar="🦊">🦊</button>
+            <button type="button" class="avatar-option" data-avatar="🐱">🐱</button>
+            <button type="button" class="avatar-option" data-avatar="🐼">🐼</button>
+            <button type="button" class="avatar-option" data-avatar="🦁">🦁</button>
+            <button type="button" class="avatar-option" data-avatar="🤖">🤖</button>
+            <button type="button" class="avatar-option" data-avatar="🚀">🚀</button>
+            <button type="button" class="avatar-option" data-avatar="⚡">⚡</button>
+            <button type="button" class="avatar-option" data-avatar="🔮">🔮</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-block">Enter Chatroom</button>
+      </form>
+
+      <div class="modal-footer-note">
+        <span>● Socket.io Real-Time Engine</span>
+        <span>● In-Memory 50-Msg Cache</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DIRECT MESSAGE QUICK MODAL ================= -->
+  <div id="dmModal" class="modal-overlay hidden">
+    <div class="modal-card dm-modal-card">
+      <div class="modal-header dm-header">
+        <div class="dm-recipient-info">
+          <span id="dmModalAvatar" class="dm-avatar">👤</span>
+          <div>
+            <h3 id="dmModalTitle">Direct Message</h3>
+            <span id="dmModalSubtitle" class="status-subtitle">Send a private direct message</span>
+          </div>
+        </div>
+        <button id="closeDmModalBtn" class="icon-btn close-btn" title="Close">&times;</button>
+      </div>
+
+      <div id="dmHistoryContainer" class="dm-history-container">
+        <div class="empty-state">No direct messages yet. Send a secret DM below!</div>
+      </div>
+
+      <form id="dmSendForm" class="dm-send-form">
+        <input 
+          type="text" 
+          id="dmMessageInput" 
+          placeholder="Type a private message..." 
+          autocomplete="off" 
+          required 
+        />
+        <button type="submit" class="btn-primary">Send DM</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APPLICATION LAYOUT ================= -->
+  <div id="appContainer" class="app-container hidden">
+    <!-- 1. LEFT SIDEBAR (Channels & Navigation) -->
+    <aside class="sidebar channels-sidebar">
+      <div class="brand-container">
+        <div class="logo-badge">⚡</div>
+        <div class="brand-meta">
+          <h1>PulseChat</h1>
+          <span class="status-indicator-pill"><span class="dot online"></span> Connected</span>
+        </div>
+      </div>
+
+      <!-- User Profile Header -->
+      <div class="current-user-card">
+        <div class="user-avatar-badge" id="currentUserAvatar">🦊</div>
+        <div class="user-info">
+          <span class="user-name" id="currentUsername">Aarav</span>
+          <span class="socket-id-tag" id="currentUserSocketId">Socket: #...</span>
+        </div>
+      </div>
+
+      <!-- Navigation & Channels -->
+      <div class="sidebar-scrollable">
+        <div class="section-heading">
+          <span>CHANNELS</span>
+        </div>
+        <ul class="channel-list" id="channelList">
+          <li class="channel-item active" data-room="general">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">general</span>
+            <span class="unread-pill hidden" id="unread-general">0</span>
+          </li>
+          <li class="channel-item" data-room="developers">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">developers</span>
+            <span class="unread-pill hidden" id="unread-developers">0</span>
+          </li>
+          <li class="channel-item" data-room="random">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">random</span>
+            <span class="unread-pill hidden" id="unread-random">0</span>
+          </li>
+          <li class="channel-item" data-room="gaming">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">gaming</span>
+            <span class="unread-pill hidden" id="unread-gaming">0</span>
+          </li>
+          <li class="channel-item" data-room="tech">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">tech</span>
+            <span class="unread-pill hidden" id="unread-tech">0</span>
+          </li>
+        </ul>
+
+        <!-- Direct Messages Section -->
+        <div class="section-heading dm-heading">
+          <span>DIRECT MESSAGES</span>
+          <span class="help-hint">Click user to DM</span>
+        </div>
+        <ul class="dm-conversations-list" id="dmConversationsList">
+          <li class="empty-dm-hint">No active direct messages. Click any user in the roster to start a DM!</li>
+        </ul>
+      </div>
+
+      <!-- Footer Quick Status -->
+      <div class="sidebar-footer">
+        <div class="server-stat">
+          <span class="stat-label">Max Replay History:</span>
+          <span class="stat-value">50 msgs</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. CENTER CHAT AREA -->
+    <main class="chat-main">
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="channel-info">
+          <span class="active-channel-hash" id="activeChannelPrefix">#</span>
+          <div>
+            <h2 id="activeRoomTitle">general</h2>
+            <p id="activeRoomDescription">Welcome to the general discussion room</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="participant-count-badge" id="participantCountBadge">
+            <span class="online-dot"></span>
+            <span id="roomUsersCount">1 online</span>
+          </div>
+          <button id="toggleParticipantsBtn" class="icon-btn mobile-only" title="Toggle User Roster">👥</button>
+        </div>
+      </header>
+
+      <!-- Message History / Message Stream -->
+      <div class="messages-container" id="messagesContainer">
+        <div class="welcome-channel-banner" id="welcomeBanner">
+          <div class="welcome-icon">💬</div>
+          <h3 id="welcomeTitle">Welcome to #general!</h3>
+          <p id="welcomeSubtitle">This is the start of the #general channel. Messages and history are synchronized in real-time.</p>
+        </div>
+        <!-- Chat bubbles rendered dynamically -->
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="typing-indicator-bar" id="typingIndicatorBar">
+        <div class="typing-content hidden" id="typingContent">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span id="typingText">Aarav is typing...</span>
+        </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <footer class="chat-input-area">
+        <form id="chatForm" class="chat-form">
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="messageInput" 
+              placeholder="Message #general..." 
+              autocomplete="off" 
+              required 
+            />
+            <button type="submit" id="sendBtn" class="btn-send" title="Send Message (Enter)">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-hints">
+            <span><kbd>Enter</kbd> to send</span>
+            <span>•</span>
+            <span>Real-time debounced typing indicator</span>
+          </div>
+        </form>
+      </footer>
+    </main>
+
+    <!-- 3. RIGHT SIDEBAR (Active Room Participant Roster) -->
+    <aside class="sidebar roster-sidebar" id="rosterSidebar">
+      <div class="roster-header">
+        <h3>Room Participants</h3>
+        <span class="badge" id="rosterBadgeCount">0</span>
+      </div>
+      <p class="roster-subtext">Click on any participant to send a secret Direct Message.</p>
+
+      <div class="roster-list-container">
+        <ul class="roster-list" id="rosterList">
+          <!-- Populated dynamically -->
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Socket.io Client Script -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
